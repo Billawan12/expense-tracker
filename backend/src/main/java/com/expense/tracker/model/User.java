@@ -1,6 +1,6 @@
 package com.expense.tracker.model;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -30,8 +30,8 @@ public class User {
     private String username;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6,message = "Password must be at least 6 characters")
-    @Column(unique = true, nullable = false)
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Column(nullable = false)
     private String password;
 
     @NotBlank(message = "Email is required")
@@ -43,6 +43,7 @@ public class User {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore  // Prevents infinite recursion when serializing to JSON
     private List<Expense> expenses = new ArrayList<>();
 
     @PrePersist
