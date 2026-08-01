@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { expenseService } from '../services/api';
-import { Expense, CATEGORY_LABELS } from '../types';
+import { Expense } from '../types';
+import DashboardHeader from './DashboardHeader';
+import ExpenseDistributionChart from './ExpenseDistributionChart';
+import CategoryBreakdown from './CategoryBreakdown';
+import RecentTransactions from './RecentTransactions';
 
 const Dashboard: React.FC = () => {
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -18,17 +22,14 @@ const Dashboard: React.FC = () => {
     const loadExpenses = async () => {
         try {
             const response = await expenseService.getAll();
-            // Ensure that response.data is an array
             if (Array.isArray(response.data)) {
                 setExpenses(response.data);
             } else {
-                console.error('Expenses data is not an array:', response.data);
                 setExpenses([]);
             }
         } catch (err) {
-            console.error('Error loading expenses:', err);
             setError('Failed to load expenses');
-            setExpenses([]); // Reset to empty array on error
+            setExpenses([]);
         } finally {
             setLoading(false);
         }
@@ -38,7 +39,7 @@ const Dashboard: React.FC = () => {
         if (window.confirm('Are you sure you want to delete this expense?')) {
             try {
                 await expenseService.delete(id);
-                await loadExpenses(); // Refresh list
+                await loadExpenses();
             } catch (err) {
                 alert('Failed to delete expense');
             }
@@ -50,111 +51,46 @@ const Dashboard: React.FC = () => {
         navigate('/login');
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-        }).format(amount);
-    };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
-    // Safe helpers to avoid errors if expenses is not an array
-    const expenseCount = Array.isArray(expenses) ? expenses.length : 0;
-    const totalSpent = Array.isArray(expenses) 
+    // Calculate totals
+    const totalExpenses = Array.isArray(expenses) 
         ? expenses.reduce((sum, e) => sum + (e.amount || 0), 0) 
         : 0;
-    const categoriesUsed = Array.isArray(expenses) 
-        ? new Set(expenses.map(e => e.category)).size 
-        : 0;
+
+    // Budget: you can make this dynamic or fixed
+    const BUDGET = 2000;
 
     if (loading) {
-        return <div style={{ textAlign: 'center', padding: '2rem' }}>Loading expenses...</div>;
+        return <div style={styles.loading}>Loading dashboard...</div>;
     }
 
     if (error) {
-        return <div style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>{error}</div>;
+        return <div style={styles.error}>{error}</div>;
     }
 
     return (
         <div style={styles.container}>
-            {/* Header */}
-            <div style={styles.header}>
-                <div>
-                    <h1 style={styles.title}>Welcome, {user}!</h1>
-                    <p style={styles.subtitle}>Track your spending and manage your finances</p>
-                </div>
-                <div style={styles.headerActions}>
-                    <Link to="/add" style={styles.addButton}>+ Add Expense</Link>
-                    <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
-                </div>
+            {/* Dashboard Header with Greeting and Budget */}
+            <DashboardHeader 
+                username={user || 'User'}
+                totalExpenses={totalExpenses}
+                budget={BUDGET}
+                expensesCount={expenses.length}
+            />
+
+            {/* Action Buttons */}
+            <div style={styles.actionRow}>
+                <Link to="/add" style={styles.addButton}>+ Add Expense</Link>
+                <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
             </div>
 
-            {/* Stats */}
-            <div style={styles.statsGrid}>
-                <div style={styles.statCard}>
-                    <div style={styles.statLabel}>Total Expenses</div>
-                    <div style={styles.statValue}>{expenseCount}</div>
-                </div>
-                <div style={styles.statCard}>
-                    <div style={styles.statLabel}>Total Spent</div>
-                    <div style={styles.statValue}>{formatCurrency(totalSpent)}</div>
-                </div>
-                <div style={styles.statCard}>
-                    <div style={styles.statLabel}>Categories Used</div>
-                    <div style={styles.statValue}>{categoriesUsed}</div>
-                </div>
+            {/* Two-column layout: Chart + Category Breakdown */}
+            <div style={styles.grid2Col}>
+                <ExpenseDistributionChart expenses={expenses} />
+                <CategoryBreakdown expenses={expenses} />
             </div>
 
-            {/* Expense Table */}
-            {expenseCount === 0 ? (
-                <div style={styles.emptyState}>
-                    <p>No expenses found. Start tracking your spending today!</p>
-                    <Link to="/add" style={styles.addButton}>Add Your First Expense</Link>
-                </div>
-            ) : (
-                <div style={styles.tableContainer}>
-                    <table style={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Category</th>
-                                <th>Description</th>
-                                <th>Amount</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {Array.isArray(expenses) && expenses.map((expense) => (
-                                <tr key={expense.id} style={styles.tableRow}>
-                                    <td>{formatDate(expense.expenseDate)}</td>
-                                    <td>
-                                        <span style={styles.categoryBadge}>
-                                            {CATEGORY_LABELS[expense.category] || expense.category}
-                                        </span>
-                                    </td>
-                                    <td>{expense.description || '-'}</td>
-                                    <td style={styles.amount}>{formatCurrency(expense.amount)}</td>
-                                    <td>
-                                        <button 
-                                            onClick={() => handleDelete(expense.id!)}
-                                            style={styles.deleteButton}
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+            {/* Recent Transactions */}
+            <RecentTransactions expenses={expenses} />
         </div>
     );
 };
@@ -164,32 +100,30 @@ const styles: { [key: string]: React.CSSProperties } = {
         maxWidth: '1200px',
         margin: '0 auto',
         padding: '2rem',
-        fontFamily: 'system-ui, sans-serif',
+        background: '#f5f7fa',
+        minHeight: '100vh',
     },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: '2rem',
-        flexWrap: 'wrap',
-        gap: '1rem',
-    },
-    title: {
-        fontSize: '2rem',
-        margin: 0,
-        color: '#1a1a2e',
-    },
-    subtitle: {
+    loading: {
+        textAlign: 'center',
+        padding: '4rem',
         color: '#666',
-        margin: '0.5rem 0 0 0',
+        background: '#f5f7fa',
+        minHeight: '100vh',
     },
-    headerActions: {
+    error: {
+        textAlign: 'center',
+        padding: '4rem',
+        color: '#f44336',
+        background: '#f5f7fa',
+        minHeight: '100vh',
+    },
+    actionRow: {
         display: 'flex',
         gap: '1rem',
-        alignItems: 'center',
+        marginBottom: '2rem',
+        justifyContent: 'flex-end',
     },
     addButton: {
-        display: 'inline-block',
         padding: '0.75rem 1.5rem',
         backgroundColor: '#00d4ff',
         color: '#1a1a2e',
@@ -198,9 +132,10 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: '600',
         textDecoration: 'none',
         cursor: 'pointer',
+        display: 'inline-block',
     },
     logoutButton: {
-        padding: '0.5rem 1.5rem',
+        padding: '0.75rem 1.5rem',
         backgroundColor: 'transparent',
         border: '1px solid #f44336',
         color: '#f44336',
@@ -208,69 +143,11 @@ const styles: { [key: string]: React.CSSProperties } = {
         cursor: 'pointer',
         fontWeight: '500',
     },
-    statsGrid: {
+    grid2Col: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gridTemplateColumns: '1fr 1fr',
         gap: '1.5rem',
         marginBottom: '2rem',
-    },
-    statCard: {
-        backgroundColor: 'white',
-        padding: '1.5rem',
-        borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-        textAlign: 'center',
-    },
-    statLabel: {
-        fontSize: '0.875rem',
-        color: '#666',
-    },
-    statValue: {
-        fontSize: '2rem',
-        fontWeight: '700',
-        color: '#1a1a2e',
-    },
-    tableContainer: {
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-        overflowX: 'auto',
-        padding: '1rem',
-    },
-    table: {
-        width: '100%',
-        borderCollapse: 'collapse',
-    },
-    tableRow: {
-        borderBottom: '1px solid #f0f0f0',
-    },
-    categoryBadge: {
-        display: 'inline-block',
-        padding: '0.25rem 0.75rem',
-        borderRadius: '20px',
-        fontSize: '0.75rem',
-        fontWeight: '600',
-        backgroundColor: '#e8f0fe',
-        color: '#1a73e8',
-    },
-    amount: {
-        fontWeight: '600',
-    },
-    deleteButton: {
-        padding: '0.25rem 0.75rem',
-        backgroundColor: '#f44336',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '0.875rem',
-    },
-    emptyState: {
-        textAlign: 'center',
-        padding: '4rem 2rem',
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
     },
 };
 
