@@ -7,7 +7,6 @@ import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import AddExpense from './components/AddExpense';
 import EditExpense from './components/EditExpense';
-import './App.css';
 
 function App() {
     return (
