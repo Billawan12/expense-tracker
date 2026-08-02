@@ -1,18 +1,41 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { expenseService } from '../services/api';
 import { CATEGORY_OPTIONS, CATEGORY_LABELS } from '../types';
 
-const AddExpense: React.FC = () => {
+const EditExpense: React.FC = () => {
+    const { id } = useParams<{ id: string }>();
     const [expense, setExpense] = useState({
         amount: '',
         category: '',
         description: '',
-        expenseDate: new Date().toISOString().split('T')[0],
+        expenseDate: '',
     });
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        loadExpense();
+    }, [id]);
+
+    const loadExpense = async () => {
+        try {
+            const response = await expenseService.getById(Number(id));
+            const data = response.data;
+            setExpense({
+                amount: data.amount.toString(),
+                category: data.category,
+                description: data.description || '',
+                expenseDate: data.expenseDate,
+            });
+        } catch (err) {
+            setError('Failed to load expense');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setExpense({ ...expense, [e.target.name]: e.target.value });
@@ -21,17 +44,17 @@ const AddExpense: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        setLoading(true);
+        setSaving(true);
 
         try {
             const amount = parseFloat(expense.amount);
             if (isNaN(amount) || amount <= 0) {
                 setError('Please enter a valid amount greater than 0');
-                setLoading(false);
+                setSaving(false);
                 return;
             }
 
-            await expenseService.create({
+            await expenseService.update(Number(id), {
                 amount: amount,
                 category: expense.category,
                 description: expense.description,
@@ -40,16 +63,24 @@ const AddExpense: React.FC = () => {
 
             navigate('/dashboard');
         } catch (err) {
-            setError('Failed to add expense. Please try again.');
+            setError('Failed to update expense. Please try again.');
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
+
+    if (loading) {
+        return <div style={styles.loading}>Loading expense...</div>;
+    }
+
+    if (error) {
+        return <div style={styles.error}>{error}</div>;
+    }
 
     return (
         <div style={styles.container}>
             <div style={styles.header}>
-                <h2 style={styles.title}>Add New Expense</h2>
+                <h2 style={styles.title}>Edit Expense</h2>
                 <Link to="/dashboard" style={styles.backButton}>← Back</Link>
             </div>
 
@@ -65,7 +96,7 @@ const AddExpense: React.FC = () => {
                         value={expense.amount}
                         onChange={handleChange}
                         required
-                        disabled={loading}
+                        disabled={saving}
                         style={styles.input}
                     />
                 </div>
@@ -77,7 +108,7 @@ const AddExpense: React.FC = () => {
                         value={expense.category}
                         onChange={handleChange}
                         required
-                        disabled={loading}
+                        disabled={saving}
                         style={styles.input}
                     >
                         <option value="">Select a category</option>
@@ -97,7 +128,7 @@ const AddExpense: React.FC = () => {
                         placeholder="Brief description"
                         value={expense.description}
                         onChange={handleChange}
-                        disabled={loading}
+                        disabled={saving}
                         style={styles.input}
                     />
                 </div>
@@ -110,15 +141,15 @@ const AddExpense: React.FC = () => {
                         value={expense.expenseDate}
                         onChange={handleChange}
                         required
-                        disabled={loading}
+                        disabled={saving}
                         style={styles.input}
                     />
                 </div>
 
-                {error && <div style={styles.error}>{error}</div>}
+                {error && <div style={styles.errorMessage}>{error}</div>}
 
-                <button type="submit" disabled={loading} style={styles.submitButton}>
-                    {loading ? 'Saving...' : 'Save Expense'}
+                <button type="submit" disabled={saving} style={styles.submitButton}>
+                    {saving ? 'Updating...' : 'Update Expense'}
                 </button>
             </form>
         </div>
@@ -130,7 +161,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         maxWidth: '600px',
         margin: '2rem auto',
         padding: '0 1rem',
-        fontFamily: 'system-ui, sans-serif',
     },
     header: {
         display: 'flex',
@@ -174,7 +204,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '1rem',
         boxSizing: 'border-box',
     },
-    error: {
+    errorMessage: {
         backgroundColor: '#ffebee',
         color: '#c62828',
         padding: '0.75rem',
@@ -194,6 +224,16 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: '600',
         cursor: 'pointer',
     },
+    loading: {
+        textAlign: 'center',
+        padding: '2rem',
+        color: '#666',
+    },
+    error: {
+        textAlign: 'center',
+        padding: '2rem',
+        color: '#f44336',
+    },
 };
 
-export default AddExpense;
+export default EditExpense;

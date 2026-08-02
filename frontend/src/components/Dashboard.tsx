@@ -90,7 +90,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Recent Transactions */}
-            <RecentTransactions expenses={expenses} />
+            <RecentTransactions expenses={expenses} onDelete={handleDelete} />
         </div>
     );
 };

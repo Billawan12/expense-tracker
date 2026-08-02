@@ -39,3 +39,14 @@ export const CATEGORY_LABELS: Record<string, string> = {
     EDUCATION: 'Education',
     OTHER: 'Other'
 };
+
+export const CATEGORY_COLORS: Record<string, string> = {
+    FOOD: '#FF6B6B',
+    TRANSPORT: '#4ECDC4',
+    ENTERTAINMENT: '#FFE66D',
+    SHOPPING: '#A8E6CF',
+    BILLS: '#FF8A5C',
+    HEALTH: '#6C5CE7',
+    EDUCATION: '#74B9FF',
+    OTHER: '#DFE6E9'
+};

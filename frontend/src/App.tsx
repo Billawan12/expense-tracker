@@ -6,6 +6,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import AddExpense from './components/AddExpense';
+import EditExpense from './components/EditExpense';
 import './App.css';
 
 function App() {
@@ -29,6 +30,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <AddExpense />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/edit/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <EditExpense />
                                 </ProtectedRoute>
                             }
                         />

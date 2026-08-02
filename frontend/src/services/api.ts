@@ -44,8 +44,17 @@ export const authService = {
 
 export const expenseService = {
     getAll: () => api.get<Expense[]>('/expenses'),
+    
+    //  NEW: Get a single expense by ID
+    getById: (id: number) => api.get<Expense>(`/expenses/${id}`),
+    
     create: (expense: Omit<Expense, 'id'>) =>
         api.post<Expense>('/expenses', expense),
+    
+    //  NEW: Update an existing expense
+    update: (id: number, expense: Partial<Expense>) =>
+        api.put<Expense>(`/expenses/${id}`, expense),
+    
     delete: (id: number) => api.delete(`/expenses/${id}`),
 };
 

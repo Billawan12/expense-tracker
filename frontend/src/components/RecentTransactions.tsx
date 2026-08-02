@@ -1,11 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '../types';
 
 interface RecentTransactionsProps {
     expenses: any[];
+    onDelete: (id: number) => void;  // New prop for delete
 }
 
-const RecentTransactions: React.FC<RecentTransactionsProps> = ({ expenses }) => {
+const RecentTransactions: React.FC<RecentTransactionsProps> = ({ expenses, onDelete }) => {
     // Show latest 5 expenses
     const recent = [...expenses]
         .sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime())
@@ -18,7 +20,12 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ expenses }) => 
 
     return (
         <div style={styles.container}>
-            <h3 style={styles.title}>Recent Transactions</h3>
+            <div style={styles.header}>
+                <h3 style={styles.title}>Recent Transactions</h3>
+                {expenses.length > 5 && (
+                    <Link to="/expenses" style={styles.viewAll}>View All</Link>
+                )}
+            </div>
             {recent.length === 0 ? (
                 <p style={styles.emptyText}>No transactions yet</p>
             ) : (
@@ -45,7 +52,18 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ expenses }) => 
                                 </div>
                             </div>
                         </div>
-                        <span style={styles.transactionAmount}>-${exp.amount.toFixed(2)}</span>
+                        <div style={styles.transactionRight}>
+                            <span style={styles.transactionAmount}>-${exp.amount.toFixed(2)}</span>
+                            <div style={styles.actionButtons}>
+                                <Link to={`/edit/${exp.id}`} style={styles.editButton}>Edit</Link>
+                                <button 
+                                    onClick={() => onDelete(exp.id!)}
+                                    style={styles.deleteButton}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 ))
             )}
@@ -60,12 +78,22 @@ const styles: { [key: string]: React.CSSProperties } = {
         padding: '1.5rem',
         boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
     },
+    header: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1rem',
+    },
     title: {
         fontSize: '1rem',
         fontWeight: '600',
         color: '#1a1a2e',
-        marginTop: 0,
-        marginBottom: '1rem',
+        margin: 0,
+    },
+    viewAll: {
+        fontSize: '0.875rem',
+        color: '#00d4ff',
+        textDecoration: 'none',
     },
     transactionItem: {
         display: 'flex',
@@ -111,10 +139,38 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '0.75rem',
         color: '#999',
     },
+    transactionRight: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+    },
     transactionAmount: {
         fontSize: '0.875rem',
         fontWeight: '600',
         color: '#f44336',
+    },
+    actionButtons: {
+        display: 'flex',
+        gap: '0.5rem',
+    },
+    editButton: {
+        padding: '0.25rem 0.75rem',
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        fontSize: '0.75rem',
+        cursor: 'pointer',
+        textDecoration: 'none',
+    },
+    deleteButton: {
+        padding: '0.25rem 0.75rem',
+        backgroundColor: '#f44336',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        fontSize: '0.75rem',
+        cursor: 'pointer',
     },
     emptyText: {
         color: '#666',
