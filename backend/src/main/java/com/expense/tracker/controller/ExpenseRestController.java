@@ -35,11 +35,28 @@ public class ExpenseRestController {
         return ResponseEntity.ok(expenses);
     }
 
+    // ✅ NEW: Get single expense by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Expense> getExpenseById(@PathVariable Long id) {
+        Long userId = getLoggedInUserId();
+        Expense expense = expenseService.getExpenseById(id, userId);
+        return ResponseEntity.ok(expense);
+    }
+
     @PostMapping
     public ResponseEntity<Expense> createExpense(@RequestBody Expense expense) {
         Long userId = getLoggedInUserId();
         Expense savedExpense = expenseService.saveExpense(expense, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedExpense);
+    }
+
+    // ✅ NEW: Update an existing expense
+    @PutMapping("/{id}")
+    public ResponseEntity<Expense> updateExpense(@PathVariable Long id, @RequestBody Expense expense) {
+        Long userId = getLoggedInUserId();
+        expense.setId(id);
+        Expense updatedExpense = expenseService.updateExpense(expense, userId);
+        return ResponseEntity.ok(updatedExpense);
     }
 
     @DeleteMapping("/{id}")
