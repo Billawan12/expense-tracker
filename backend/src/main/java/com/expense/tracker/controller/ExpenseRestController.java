@@ -2,9 +2,12 @@ package com.expense.tracker.controller;
 
 import com.expense.tracker.model.Expense;
 import com.expense.tracker.service.ExpenseService;
+import com.expense.tracker.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,9 +19,13 @@ public class ExpenseRestController {
     @Autowired
     private ExpenseService expenseService;
 
-    // Temporary - will be replaced with Spring Security later
+    @Autowired
+    private UserService userService;
+
     private Long getLoggedInUserId() {
-        return 1L; // Hardcoded for now
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userService.getUserIdByUsername(username);
     }
 
     @GetMapping
