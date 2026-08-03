@@ -22,3 +22,6 @@ application.properties
 # Database
 *.db
 *.sqlitetarget/
+.DS_Store
+node_modules/
+*.log
